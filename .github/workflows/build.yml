@@ -69,8 +69,10 @@ jobs:
           fi
       - name: 拉取前端
         run: |
-          sudo git clone https://github.com/msmoshang/ghproxy-theme-aurora.git pages
-          sudo rm -rf pages/.git/          
+          git clone https://github.com/msmoshang/ghproxy-theme-aurora.git pages
+          rm -rf pages/.git
+      - name: 验证前端文件
+        run: ls -la pages/        
       - name: 安装 Go
         uses: actions/setup-go@v3
         with:
