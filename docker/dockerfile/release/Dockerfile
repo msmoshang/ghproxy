@@ -30,6 +30,24 @@ RUN wget -O /data/${APPLICATION}/whitelist.json https://raw.githubusercontent.co
 # 权限
 RUN chmod +x /data/${APPLICATION}/${APPLICATION}
 
+FROM alpine:latest
+
+RUN apk add --no-cache curl
+
+ARG USER=msmoshang
+ARG REPO=ghproxy
+ARG BRANCH=main
+ARG APPLICATION=ghproxy
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETPLATFORM
+
+COPY --from=builder /data/www /data/www
+COPY --from=builder /data/${APPLICATION} /data/${APPLICATION}
+
+# 权限
+RUN chmod +x /data/${APPLICATION}/${APPLICATION}
+
 CMD ["/data/ghproxy/ghproxy"]
 
 
