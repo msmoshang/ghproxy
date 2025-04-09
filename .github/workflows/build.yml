@@ -1,3 +1,10 @@
+# This workflow will triage pull requests and apply a label based on the
+# paths that are modified in the pull request.
+#
+# To use this workflow, you will need to set up a .github/labeler.yml
+# file with configuration.  For more information, see:
+# https://github.com/actions/labeler
+
 name: Build
 
 on:
@@ -62,9 +69,8 @@ jobs:
           fi
       - name: 拉取前端
         run: |
-          sudo git clone https://github.com/WJQSERVER-STUDIO/GHPrxoy-Frontend.git pages
-          sudo rm -rf pages/.git/
-          
+          sudo git clone https://github.com/msmoshang/ghproxy-theme-aurora.git pages
+          sudo rm -rf pages/.git/          
       - name: 安装 Go
         uses: actions/setup-go@v3
         with:
@@ -105,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build  # 确保这个作业在 build 作业完成后运行
     env:
-      IMAGE_NAME: wjqserver/ghproxy  # 定义镜像名称变量
+      IMAGE_NAME: moshangms/ghproxy  # 定义镜像名称变量
       DOCKERFILE: docker/dockerfile/release/Dockerfile  # 定义 Dockerfile 路径变量
 
     steps:
