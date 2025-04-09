@@ -23,9 +23,9 @@ RUN VERSION=$(curl -s https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH
     rm -rf /data/${APPLICATION}/${APPLICATION}-${TARGETOS}-${TARGETARCH}.tar.gz
 
 # 拉取配置
-RUN wget -O /data/${APPLICATION}/config.toml https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/config/config.toml
-RUN wget -O /data/${APPLICATION}/blacklist.json https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/config/blacklist.json
-RUN wget -O /data/${APPLICATION}/whitelist.json https://raw.githubusercontent.com/${USER}/${REPO}/${BRANCH}/config/whitelist.json
+RUN wget -O /data/${APPLICATION}/config.toml https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/config/config.toml
+RUN wget -O /data/${APPLICATION}/blacklist.json https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/config/blacklist.json
+RUN wget -O /data/${APPLICATION}/whitelist.json https://raw.githubusercontent.com/${USER}/${REPO}/refs/heads/${BRANCH}/config/whitelist.json
 
 # 权限
 RUN chmod +x /data/${APPLICATION}/${APPLICATION}
