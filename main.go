@@ -46,6 +46,9 @@ var (
 var (
 	//go:embed pages/*
 	pagesFS embed.FS
+
+	//go:embed pages/error/*
+	errorPagesFS embed.FS
 )
 
 var (
@@ -214,6 +217,15 @@ func loadEmbeddedPages(cfg *config.Config) (fs.FS, fs.FS, error) {
 	return pages, assets, nil
 }
 
+// loadErrorPages 加载错误页面资源
+func loadErrorPages() (fs.FS, error) {
+	errorPages, err := fs.Sub(errorPagesFS, "pages/error")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load embedded error pages: %w", err)
+	}
+	return errorPages, nil
+}
+
 // setupPages 设置页面路由
 func setupPages(cfg *config.Config, r *server.Hertz) {
 	switch cfg.Pages.Mode {
@@ -371,6 +383,17 @@ func main() {
 	if cfg == nil {
 		fmt.Println("Config not loaded, exiting.")
 		return // 如果配置未加载，则不继续执行
+	}
+
+	// 加载错误页面
+	errorPages, err := loadErrorPages()
+	if err != nil {
+		logWarning("Failed to load error pages: %v", err)
+		// 继续执行，将使用默认错误处理
+	} else {
+		// 初始化错误处理器
+		proxy.InitErrorHandler(cfg, errorPages)
+		logInfo("Custom error pages initialized successfully")
 	}
 
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)

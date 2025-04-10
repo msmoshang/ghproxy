@@ -84,6 +84,7 @@ type PagesConfig struct {
 	Mode      string `toml:"mode"`
 	Theme     string `toml:"theme"`
 	StaticDir string `toml:"staticDir"`
+	Custom404 string `toml:"custom404"` // 自定义404页面路径
 }
 
 type LogConfig struct {
@@ -205,6 +206,7 @@ func DefaultConfig() *Config {
 			Mode:      "internal",
 			Theme:     "aurora",
 			StaticDir: "/data/www",
+			Custom404: "", // 默认使用内置404页面
 		},
 		Log: LogConfig{
 			LogFilePath:  "/data/ghproxy/log/ghproxy.log",

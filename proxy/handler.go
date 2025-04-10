@@ -49,7 +49,12 @@ func NoRouteHandler(cfg *config.Config, limiter *rate.RateLimiter, iplimiter *ra
 		if len(matches) < 3 {
 			errMsg := fmt.Sprintf("%s %s %s %s %s Invalid URL", c.ClientIP(), c.Method(), rawPath, c.Request.Header.UserAgent(), c.Request.Header.GetProtocol())
 			logWarning(errMsg)
-			c.String(http.StatusForbidden, "Invalid URL Format. Path: %s", rawPath)
+			// 使用自定义错误处理器显示404页面
+			if errorHandler != nil {
+				errorHandler.HandleInvalidURL(ctx, c, rawPath)
+			} else {
+				c.String(http.StatusNotFound, "Invalid URL Format. Path: %s", rawPath)
+			}
 			return
 		}
 
@@ -59,7 +64,12 @@ func NoRouteHandler(cfg *config.Config, limiter *rate.RateLimiter, iplimiter *ra
 		user, repo, matcher, err := Matcher(rawPath, cfg)
 		if err != nil {
 			if errors.Is(err, ErrInvalidURL) {
-				c.String(http.StatusForbidden, "Invalid URL Format. Path: %s", rawPath)
+				// 使用自定义错误处理器显示404页面
+				if errorHandler != nil {
+					errorHandler.HandleInvalidURL(ctx, c, rawPath)
+				} else {
+					c.String(http.StatusNotFound, "Invalid URL Format. Path: %s", rawPath)
+				}
 				logWarning(err.Error())
 				return
 			}
