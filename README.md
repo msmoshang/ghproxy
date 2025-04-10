@@ -38,6 +38,3 @@ USDT(TRC20): `TNfSYG6F2vkiibd6J6mhhHNWDgWgNdF5hN`
 - 新增查询shell嵌套加速api
 - 增加自定义404页面选项
 
-### 待办
-
-- [ ] 新增hf镜像下载加速
