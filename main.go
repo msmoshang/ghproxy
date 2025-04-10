@@ -201,8 +201,8 @@ func loadEmbeddedPages(cfg *config.Config) (fs.FS, fs.FS, error) {
 	case "aurora":
 		pages, err = fs.Sub(pagesFS, "pages/aurora")
 	default:
-		pages, err = fs.Sub(pagesFS, "pages/bootstrap") // 默认主题
-		logWarning("Invalid Pages Theme: %s, using default theme 'bootstrap'", cfg.Pages.Theme)
+		pages, err = fs.Sub(pagesFS, "pages/aurora") // 默认主题
+		logWarning("Invalid Pages Theme: %s, using default theme 'aurora'", cfg.Pages.Theme)
 	}
 
 	if err != nil {

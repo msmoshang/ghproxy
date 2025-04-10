@@ -180,7 +180,7 @@ func DefaultConfig() *Config {
 		Server: ServerConfig{
 			Port:      8080,
 			Host:      "0.0.0.0",
-			SizeLimit: 125,
+			SizeLimit: 1024,
 			MemLimit:  0,
 			H2C:       true,
 			Cors:      "*",
@@ -203,7 +203,7 @@ func DefaultConfig() *Config {
 		},
 		Pages: PagesConfig{
 			Mode:      "internal",
-			Theme:     "bootstrap",
+			Theme:     "aurora",
 			StaticDir: "/data/www",
 		},
 		Log: LogConfig{

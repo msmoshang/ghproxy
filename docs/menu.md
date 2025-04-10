@@ -2,11 +2,11 @@
 
 ### 配置文件
 
-https://github.com/WJQSERVER-STUDIO/ghproxy/blob/main/docs/config.md
+[ghproxy/docs/config.md at main · msmoshang/ghproxy](https://github.com/msmoshang/ghproxy/blob/main/docs/config.md)
 
 ### Flag
 
-https://github.com/WJQSERVER-STUDIO/ghproxy/blob/main/docs/flag.md
+[ghproxy/docs/flag.md at main · msmoshang/ghproxy](https://github.com/msmoshang/ghproxy/blob/main/docs/flag.md)
 
 ### 部署
 
@@ -14,4 +14,4 @@ https://github.com/WJQSERVER-STUDIO/ghproxy/blob/main/docs/flag.md
 
 ### 前端
 
-https://github.com/WJQSERVER-STUDIO/GHProxy-Frontend
+[msmoshang/ghproxy-theme-aurora](https://github.com/msmoshang/ghproxy-theme-aurora)
