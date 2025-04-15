@@ -26,6 +26,7 @@ import (
 	"github.com/cloudwego/hertz/pkg/common/adaptor"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 
+	//"github.com/cloudwego/hertz/pkg/network/standard"
 	"github.com/hertz-contrib/http2/factory"
 )
 
@@ -149,6 +150,7 @@ func setupHertZLogger(cfg *config.Config) {
 		} else {
 			hlog.SetOutput(hertZfile)
 		}
+		hlog.SetLevel(hlog.LevelInfo)
 	}
 
 }
@@ -253,7 +255,6 @@ func setupPages(cfg *config.Config, r *server.Hertz) {
 		r.StaticFile("/style.css", stylesheetsPath)
 		r.StaticFile("/bootstrap.min.css", bootstrapPath)
 		r.StaticFile("/bootstrap.bundle.min.js", bootstrapBundlePath)
-		//router.StaticFile("/bootstrap.min.css", bootstrapPath)
 
 	default:
 		// 处理无效的Pages Mode
