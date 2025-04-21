@@ -1,6 +1,7 @@
 [server]
 host = "0.0.0.0" 
-port = 8080
+port = 8080 
+netlib = "netpoll" # "netpoll" / "std" "standard" "net/http" "net"
 sizeLimit = 125 # MB
 memLimit = 0 # MB
 H2C = true
@@ -26,7 +27,7 @@ rewriteAPI = false
 mode = "internal" # "internal" or "external"
 theme = "aurora" # "bootstrap" or "nebula"
 staticDir = "/data/www" 
-Custom404: "" # “不设置会使用默认404”
+Custom404 = ""
 
 [log]
 logFilePath = "/data/ghproxy/log/ghproxy.log" 
