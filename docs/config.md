@@ -38,6 +38,7 @@ rewriteAPI = false
 mode = "internal" # "internal" or "external"
 theme = "bootstrap" # "bootstrap" or "nebula"
 staticDir = "/data/www"
+Custom404 = ""
 
 [log]
 logFilePath = "/data/ghproxy/log/ghproxy.log"
@@ -182,7 +183,10 @@ url = "socks5://127.0.0.1:1080" # "http://127.0.0.1:7890"
         *   类型: 字符串 (`string`)
         *   默认值: `"/data/www"`
         *   说明:  指定外置 Pages 服务使用的静态文件目录。
-
+    *   `Custom404`:  404文件目录。
+        *   类型: 字符串 (`string`)
+        *   默认值: `"/data/www"`
+        *   说明:  指定外置 404 服务使用的静态文件目录。
 *   **`[log]` - 日志配置**
 
     *   `logFilePath`:  日志文件路径。
