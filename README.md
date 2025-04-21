@@ -20,7 +20,7 @@
 - ⚡ **支持速率限制**
 - 🔒 **支持用户鉴权**
 - 🐚 **支持 shell 脚本多层嵌套加速**
-- 🎨 **支持自定义404**
+- 🎨 **自定义404页面**
 
 ### 项目相关
 
@@ -108,3 +108,12 @@ wget -O install-dev.sh https://raw.githubusercontent.com/WJQSERVER-STUDIO/ghprox
 为爱发电,开源不易
 
 爱发电: https://afdian.com/a/wjqserver
+
+USDT(TRC20): `TNfSYG6F2vkiibd6J6mhhHNWDgWgNdF5hN`
+
+### 捐赠列表
+
+| 赞助人    |金额|
+|--------|------|
+| starry | 8 USDT (TRC20)   |
+
