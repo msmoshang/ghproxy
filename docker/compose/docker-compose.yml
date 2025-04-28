@@ -4,7 +4,9 @@ services:
         image: 'moshangms/ghproxy:latest'
         restart: always
         volumes:
-            - './ghproxy/log:/data/ghproxy/log'
+            - './ghproxy/log/run:/data/ghproxy/log'
+            - './ghproxy/log/caddy:/data/caddy/log'
             - './ghproxy/config:/data/ghproxy/config'
+            - './data/www:/data/www'
         ports:
-            - '127.0.0.1:5000:8080'
+          - '127.0.0.1:5000:8080'

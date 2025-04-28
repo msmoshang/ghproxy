@@ -1,6 +1,6 @@
 FROM alpine:latest AS builder
 
-ARG USER=WJQSERVER-STUDIO
+ARG USER=msmoshang
 ARG REPO=ghproxy
 ARG BRANCH=main
 ARG APPLICATION=ghproxy
@@ -34,9 +34,9 @@ FROM alpine:latest
 
 RUN apk add --no-cache curl
 
-ARG USER=WJQSERVER-STUDIO
+ARG USER=msmoshang
 ARG REPO=ghproxy
-ARG BRANCH=v3
+ARG BRANCH=main
 ARG APPLICATION=ghproxy
 ARG TARGETOS
 ARG TARGETARCH
@@ -49,5 +49,3 @@ COPY --from=builder /data/${APPLICATION} /data/${APPLICATION}
 RUN chmod +x /data/${APPLICATION}/${APPLICATION}
 
 CMD ["/data/ghproxy/ghproxy"]
-
-
