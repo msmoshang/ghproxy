@@ -18,6 +18,7 @@ type Config struct {
 	Whitelist WhitelistConfig
 	RateLimit RateLimitConfig
 	Outbound  OutboundConfig
+	Docker    DockerConfig
 }
 
 /*
@@ -84,13 +85,13 @@ type ShellConfig struct {
 mode = "internal" # "internal" or "external"
 theme = "bootstrap" # "bootstrap" or "nebula"
 staticDir = "/data/www"
-Custom404 = "" # 自定义404页面路径
+custom404 = "" # 自定义404页面路径，为空则使用内置404页面
 */
 type PagesConfig struct {
 	Mode      string `toml:"mode"`
 	Theme     string `toml:"theme"`
 	StaticDir string `toml:"staticDir"`
-	Custom404 string `toml:"custom404"` // 自定义404页面路径
+	Custom404 string `toml:"custom404"`
 }
 
 type LogConfig struct {
@@ -145,6 +146,16 @@ type OutboundConfig struct {
 	Url     string `toml:"url"`
 }
 
+/*
+[docker]
+enabled = false
+target = "ghcr" # ghcr/dockerhub
+*/
+type DockerConfig struct {
+	Enabled bool   `toml:"enabled"`
+	Target  string `toml:"target"`
+}
+
 // LoadConfig 从 TOML 配置文件加载配置
 func LoadConfig(filePath string) (*Config, error) {
 	if !FileExists(filePath) {
@@ -188,7 +199,7 @@ func DefaultConfig() *Config {
 			Port:      8080,
 			Host:      "0.0.0.0",
 			NetLib:    "netpoll",
-			SizeLimit: 1024,
+			SizeLimit: 125,
 			MemLimit:  0,
 			H2C:       true,
 			Cors:      "*",
@@ -211,9 +222,8 @@ func DefaultConfig() *Config {
 		},
 		Pages: PagesConfig{
 			Mode:      "internal",
-			Theme:     "aurora",
+			Theme:     "bootstrap",
 			StaticDir: "/data/www",
-			Custom404: "", // 默认使用内置404页面
 		},
 		Log: LogConfig{
 			LogFilePath:  "/data/ghproxy/log/ghproxy.log",
@@ -231,11 +241,11 @@ func DefaultConfig() *Config {
 		},
 		Blacklist: BlacklistConfig{
 			Enabled:       false,
-			BlacklistFile: "/data/ghproxy/config/blacklist.txt",
+			BlacklistFile: "/data/ghproxy/config/blacklist.json",
 		},
 		Whitelist: WhitelistConfig{
 			Enabled:       false,
-			WhitelistFile: "/data/ghproxy/config/whitelist.txt",
+			WhitelistFile: "/data/ghproxy/config/whitelist.json",
 		},
 		RateLimit: RateLimitConfig{
 			Enabled:       false,
@@ -246,6 +256,10 @@ func DefaultConfig() *Config {
 		Outbound: OutboundConfig{
 			Enabled: false,
 			Url:     "socks5://127.0.0.1:1080",
+		},
+		Docker: DockerConfig{
+			Enabled: false,
+			Target:  "ghcr",
 		},
 	}
 }

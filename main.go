@@ -18,16 +18,17 @@ import (
 	"ghproxy/proxy"
 	"ghproxy/rate"
 
-	_ "net/http/pprof"
-
 	"github.com/WJQSERVER-STUDIO/go-utils/logger"
+	"github.com/hertz-contrib/http2/factory"
+
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/middlewares/server/recovery"
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/cloudwego/hertz/pkg/common/adaptor"
 	"github.com/cloudwego/hertz/pkg/common/hlog"
 	"github.com/cloudwego/hertz/pkg/network/standard"
-	"github.com/hertz-contrib/http2/factory"
+
+	_ "net/http/pprof"
 )
 
 var (
@@ -47,9 +48,6 @@ var (
 var (
 	//go:embed pages/*
 	pagesFS embed.FS
-
-	//go:embed pages/error/*
-	errorPagesFS embed.FS
 )
 
 var (
@@ -203,29 +201,30 @@ func loadEmbeddedPages(cfg *config.Config) (fs.FS, fs.FS, error) {
 		pages, err = fs.Sub(pagesFS, "pages/classic")
 	case "mino":
 		pages, err = fs.Sub(pagesFS, "pages/mino")
-	case "aurora":
-		pages, err = fs.Sub(pagesFS, "pages/aurora")
 	default:
-		pages, err = fs.Sub(pagesFS, "pages/aurora") // 默认主题
-		logWarning("Invalid Pages Theme: %s, using default theme 'aurora'", cfg.Pages.Theme)
+		pages, err = fs.Sub(pagesFS, "pages/bootstrap") // 默认主题
+		logWarning("Invalid Pages Theme: %s, using default theme 'bootstrap'", cfg.Pages.Theme)
 	}
 
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to load embedded pages: %w", err)
 	}
 
+	// 初始化errPagesFs
+	errPagesInitErr := proxy.InitErrPagesFS(pagesFS)
+	if errPagesInitErr != nil {
+		logWarning("errPagesInitErr: %s", errPagesInitErr)
+	}
+
+	// 设置自定义404页面
+	if cfg.Pages.Custom404 != "" {
+		proxy.SetCustom404Page(cfg.Pages.Custom404)
+		logInfo("已配置自定义404页面: %s", cfg.Pages.Custom404)
+	}
+
 	var assets fs.FS
 	assets, err = fs.Sub(pagesFS, "pages/assets")
 	return pages, assets, nil
-}
-
-// loadErrorPages 加载错误页面资源
-func loadErrorPages() (fs.FS, error) {
-	errorPages, err := fs.Sub(errorPagesFS, "pages/error")
-	if err != nil {
-		return nil, fmt.Errorf("failed to load embedded error pages: %w", err)
-	}
-	return errorPages, nil
 }
 
 // setupPages 设置页面路由
@@ -374,31 +373,17 @@ func init() {
 }
 
 func main() {
-
 	if showVersion || showHelp {
 		return
 	}
 	logDebug("Run Mode: %s Netlib: %s", runMode, cfg.Server.NetLib)
 
-	// 确保在程序配置加载且非版本显示模式下执行
 	if cfg == nil {
 		fmt.Println("Config not loaded, exiting.")
 		return
 	}
 
-	// 加载错误页面
-	errorPages, err := loadErrorPages()
-	if err != nil {
-		logWarning("Failed to load error pages: %v", err)
-		// 继续执行，将使用默认错误处理
-	} else {
-		// 初始化错误处理器
-		proxy.InitErrorHandler(cfg, errorPages)
-		logInfo("Custom error pages initialized successfully")
-	}
-
 	addr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-
 	if cfg.Server.NetLib == "std" || cfg.Server.NetLib == "standard" || cfg.Server.NetLib == "net" || cfg.Server.NetLib == "net/http" {
 		if cfg.Server.H2C {
 			r = server.New(
@@ -431,56 +416,58 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 添加Recovery中间件
-	r.Use(recovery.Recovery())
-	// 添加log中间件
-	r.Use(loggin.Middleware())
-
+	r.Use(recovery.Recovery()) // Recovery中间件
+	r.Use(loggin.Middleware()) // log中间件
 	setupApi(cfg, r, version)
-
 	setupPages(cfg, r)
 
-	/*
-		// 1. GitHub Releases/Archive - Use distinct path segments for type
-		r.GET("/github.com/:username/:repo/releases/*filepath", func(ctx context.Context, c *app.RequestContext) { // Distinct path for releases
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
+	r.GET("/github.com/:user/:repo/releases/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "release")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
 
-		r.GET("/github.com/:username/:repo/archive/*filepath", func(ctx context.Context, c *app.RequestContext) { // Distinct path for archive
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
+	r.GET("/github.com/:user/:repo/archive/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "release")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
 
-		// 2. GitHub Blob/Raw - Use distinct path segments for type
-		r.GET("/github.com/:username/:repo/blob/*filepath", func(ctx context.Context, c *app.RequestContext) { // Distinct path for blob
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
+	r.GET("/github.com/:user/:repo/blob/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "blob")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
 
-		r.GET("/github.com/:username/:repo/raw/*filepath", func(ctx context.Context, c *app.RequestContext) { // Distinct path for raw
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
+	r.GET("/github.com/:user/:repo/raw/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "raw")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
 
-		r.GET("/github.com/:username/:repo/info/*filepath", func(ctx context.Context, c *app.RequestContext) { // Distinct path for info
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
-		r.GET("/github.com/:username/:repo/git-upload-pack", func(ctx context.Context, c *app.RequestContext) {
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
+	r.GET("/github.com/:user/:repo/info/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "gitclone")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
+	r.GET("/github.com/:user/:repo/git-upload-pack", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "gitclone")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
 
-		// 4. Raw GitHubusercontent - Keep as is (assuming it's distinct enough)
-		r.GET("/raw.githubusercontent.com/:username/:repo/*filepath", func(ctx context.Context, c *app.RequestContext) {
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
+	r.GET("/raw.githubusercontent.com/:user/:repo/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "raw")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
 
-		// 5. Gist GitHubusercontent - Keep as is (assuming it's distinct enough)
-		r.GET("/gist.githubusercontent.com/:username/*filepath", func(ctx context.Context, c *app.RequestContext) {
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
+	r.GET("/gist.githubusercontent.com/:user/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "gist")
+		proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
 
-		// 6. GitHub API Repos - Keep as is (assuming it's distinct enough)
-		r.GET("/api.github.com/repos/:username/:repo/*filepath", func(ctx context.Context, c *app.RequestContext) {
-			proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
-		})
-	*/
+	r.GET("/api.github.com/repos/:user/:repo/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		c.Set("matcher", "api")
+		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
+	})
+
+	r.Any("/v2/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		proxy.GhcrRouting(cfg)(ctx, c)
+	})
 
 	r.NoRoute(func(ctx context.Context, c *app.RequestContext) {
 		proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
@@ -489,6 +476,7 @@ func main() {
 	fmt.Printf("GHProxy Version: %s\n", version)
 	fmt.Printf("A Go Based High-Performance Github Proxy \n")
 	fmt.Printf("Made by WJQSERVER-STUDIO\n")
+
 	if cfg.Server.Debug {
 		go func() {
 			http.ListenAndServe("localhost:6060", nil)

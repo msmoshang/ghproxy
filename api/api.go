@@ -49,10 +49,15 @@ func InitHandleRouter(cfg *config.Config, r *server.Hertz, version string) {
 		apiRouter.GET("/smartgit/status", func(ctx context.Context, c *app.RequestContext) {
 			SmartGitStatusHandler(cfg, c, ctx)
 		})
+		apiRouter.GET("/smartgit/status", func(ctx context.Context, c *app.RequestContext) {
+			SmartGitStatusHandler(cfg, c, ctx)
+		})
 		apiRouter.GET("/shell/status", func(ctx context.Context, c *app.RequestContext) {
 			ShellStatusHandler(cfg, c, ctx)
 		})
-
+		apiRouter.GET("/docker/status", func(ctx context.Context, c *app.RequestContext) {
+			DockerStatusHandler(cfg, c, ctx)
+		})
 	}
 	logInfo("API router Init success")
 }
@@ -129,11 +134,21 @@ func SmartGitStatusHandler(cfg *config.Config, c *app.RequestContext, ctx contex
 		"enabled": cfg.GitClone.Mode == "cache",
 	}))
 }
+
 func ShellStatusHandler(cfg *config.Config, c *app.RequestContext, ctx context.Context) {
 	logInfo("%s %s %s %s %s", c.ClientIP(), c.Method(), string(c.Path()), c.Request.Header.UserAgent(), c.Request.Header.GetProtocol())
 	c.Response.Header.Set("Content-Type", "application/json")
 	c.JSON(200, (map[string]interface{}{
 		"editor":     cfg.Shell.Editor,
 		"rewriteAPI": cfg.Shell.RewriteAPI,
+	}))
+}
+
+func DockerStatusHandler(cfg *config.Config, c *app.RequestContext, ctx context.Context) {
+	logInfo("%s %s %s %s %s", c.ClientIP(), c.Method(), string(c.Path()), c.Request.Header.UserAgent(), c.Request.Header.GetProtocol())
+	c.Response.Header.Set("Content-Type", "application/json")
+	c.JSON(200, (map[string]interface{}{
+		"enabled": cfg.Docker.Enabled,
+		"target":  cfg.Docker.Target,
 	}))
 }

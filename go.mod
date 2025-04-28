@@ -7,7 +7,7 @@ require (
 	github.com/WJQSERVER-STUDIO/go-utils/logger v1.5.0
 	github.com/cloudwego/hertz v0.9.7
 	github.com/hertz-contrib/http2 v0.1.8
-	github.com/satomitouka/touka-httpc v0.4.0
+	github.com/satomitouka/touka-httpc v0.4.1
 	golang.org/x/net v0.39.0
 	golang.org/x/time v0.11.0
 )
@@ -24,7 +24,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
-	github.com/nyaruka/phonenumbers v1.6.0 // indirect
+	github.com/nyaruka/phonenumbers v1.6.1 // indirect
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -36,3 +36,5 @@ require (
 	golang.org/x/text v0.24.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 )
+
+//replace github.com/satomitouka/touka-httpc v0.4.1 => /data/github/satomitoka/touka-httpc

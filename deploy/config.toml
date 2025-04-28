@@ -1,6 +1,7 @@
 [server]
 host = "127.0.0.1" 
 port = 8080 
+netlib = "netpoll" # "netpoll" / "std" "standard" "net/http" "net"
 sizeLimit = 125 # MB
 memLimit = 0 # MB
 H2C = true
@@ -25,7 +26,8 @@ rewriteAPI = false
 [pages]
 mode = "internal" # "internal" or "external"
 theme = "bootstrap" # "bootstrap" or "nebula"
-staticDir = "/usr/local/ghproxy/pages" 
+staticDir = "/usr/local/ghproxy/pages"
+custom404 = "" # 自定义404页面路径，为空则使用内置404页面
 
 [log]
 logFilePath = "/usr/local/ghproxy/log/ghproxy.log" 
@@ -57,3 +59,7 @@ burst = 5
 [outbound]
 enabled = false
 url = "socks5://127.0.0.1:1080" # "http://127.0.0.1:7890"
+
+[docker]
+enabled = false
+target = "ghcr" # ghcr/dockerhub
