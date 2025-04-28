@@ -49,9 +49,6 @@ func InitHandleRouter(cfg *config.Config, r *server.Hertz, version string) {
 		apiRouter.GET("/smartgit/status", func(ctx context.Context, c *app.RequestContext) {
 			SmartGitStatusHandler(cfg, c, ctx)
 		})
-		apiRouter.GET("/smartgit/status", func(ctx context.Context, c *app.RequestContext) {
-			SmartGitStatusHandler(cfg, c, ctx)
-		})
 		apiRouter.GET("/shell/status", func(ctx context.Context, c *app.RequestContext) {
 			ShellStatusHandler(cfg, c, ctx)
 		})
