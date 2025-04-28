@@ -1,10 +1,10 @@
 version: '3.9'
 services:
     ghproxy:
-        image: 'wjqserver/ghproxy:latest'
+        image: 'moshangms/ghproxy:latest'
         restart: always
         volumes:
             - './ghproxy/log:/data/ghproxy/log'
             - './ghproxy/config:/data/ghproxy/config'
         ports:
-            - '7210:8080'
+            - '127.0.0.1:5000:8080'
