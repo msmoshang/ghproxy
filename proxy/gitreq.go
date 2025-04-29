@@ -10,14 +10,10 @@ import (
 	"github.com/cloudwego/hertz/pkg/app"
 )
 
-// GitReq 处理Git协议请求，确保正确处理HTTP头信息和数据流
 func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Config, mode string) {
 	method := string(c.Request.Method())
 
 	logDump("Url Before FMT:%s", u)
-	// 记录请求头信息，帮助调试Git协议问题
-	logDump("Git Request Headers: %v", c.Request.Header.Header())
-
 	if cfg.GitClone.Mode == "cache" {
 		userPath, repoPath, remainingPath, queryParams, err := extractParts(u)
 		if err != nil {
@@ -41,21 +37,6 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 		}
 		setRequestHeaders(c, req)
 		//removeWSHeader(req)
-
-		// 确保Git协议版本信息被正确传递
-		if c.Request.Header.Get("Git-Protocol") != "" {
-			req.Header.Set("Git-Protocol", c.Request.Header.Get("Git-Protocol"))
-			logDump("Git-Protocol version: %s", c.Request.Header.Get("Git-Protocol"))
-		}
-
-		// 确保Upgrade和Connection头被正确传递
-		if c.Request.Header.Get("Upgrade") != "" {
-			req.Header.Set("Upgrade", c.Request.Header.Get("Upgrade"))
-		}
-		if c.Request.Header.Get("Connection") != "" {
-			req.Header.Set("Connection", c.Request.Header.Get("Connection"))
-		}
-
 		AuthPassThrough(c, cfg, req)
 
 		resp, err = gitclient.Do(req)
@@ -71,21 +52,6 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 		}
 		setRequestHeaders(c, req)
 		//removeWSHeader(req)
-
-		// 确保Git协议版本信息被正确传递
-		if c.Request.Header.Get("Git-Protocol") != "" {
-			req.Header.Set("Git-Protocol", c.Request.Header.Get("Git-Protocol"))
-			logDump("Git-Protocol version: %s", c.Request.Header.Get("Git-Protocol"))
-		}
-
-		// 确保Upgrade和Connection头被正确传递
-		if c.Request.Header.Get("Upgrade") != "" {
-			req.Header.Set("Upgrade", c.Request.Header.Get("Upgrade"))
-		}
-		if c.Request.Header.Get("Connection") != "" {
-			req.Header.Set("Connection", c.Request.Header.Get("Connection"))
-		}
-
 		AuthPassThrough(c, cfg, req)
 
 		resp, err = client.Do(req)
@@ -110,14 +76,12 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 		}
 	}
 
-	// 保留所有原始响应头，确保Git协议所需的头信息被正确传递
 	for key, values := range resp.Header {
 		for _, value := range values {
 			c.Header(key, value)
 		}
 	}
 
-	// 仅移除安全相关的头信息，保留其他所有头信息
 	headersToRemove := map[string]struct{}{
 		"Content-Security-Policy":   {},
 		"Referrer-Policy":           {},
@@ -126,11 +90,6 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 
 	for header := range headersToRemove {
 		resp.Header.Del(header)
-	}
-
-	// 确保Git协议所需的头信息被保留
-	if c.Request.Header.Get("Git-Protocol") != "" {
-		c.Response.Header.Set("Git-Protocol", c.Request.Header.Get("Git-Protocol"))
 	}
 
 	switch cfg.Server.Cors {

@@ -76,7 +76,7 @@ func NoRouteHandler(cfg *config.Config, limiter *rate.RateLimiter, iplimiter *ra
 		switch matcher {
 		case "releases", "blob", "raw", "gist", "api":
 			ChunkedProxyRequest(ctx, c, rawPath, cfg, matcher)
-		case "clone", "gitclone":
+		case "clone":
 			GitReq(ctx, c, rawPath, cfg, "git")
 		default:
 			ErrorPage(c, NewErrorWithStatusLookup(500, "Matched But Not Matched"))
