@@ -29,8 +29,9 @@ var (
 		"CF-Connecting-IP": {},
 		"CF-EW-Via":        {},
 		"CDN-Loop":         {},
-		"Upgrade":          {},
-		"Connection":       {},
+		// Git协议需要保留这些头信息
+		// "Upgrade":          {},
+		// "Connection":       {},
 	}
 )
 
