@@ -2,7 +2,7 @@
 host = "0.0.0.0" 
 port = 8080 
 netlib = "netpoll" # "netpoll" / "std" "standard" "net/http" "net"
-sizeLimit = 125 # MB
+sizeLimit = 1024 # MB
 memLimit = 0 # MB
 H2C = true
 cors = "*" # "*"/"" -> "*" ; "nil" -> "" ;
@@ -25,7 +25,7 @@ rewriteAPI = false
 
 [pages]
 mode = "internal" # "internal" or "external"
-theme = "bootstrap" # "bootstrap" or "nebula"
+theme = "aurora" # "bootstrap" or "nebula"
 staticDir = "/data/www"
 custom404 = "" # 自定义404页面路径，为空则使用内置404页面 
 
