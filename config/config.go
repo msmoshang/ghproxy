@@ -222,7 +222,7 @@ func DefaultConfig() *Config {
 		},
 		Pages: PagesConfig{
 			Mode:      "internal",
-			Theme:     "bootstrap",
+			Theme:     "aurora",
 			StaticDir: "/data/www",
 		},
 		Log: LogConfig{
