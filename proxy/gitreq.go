@@ -41,6 +41,7 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 			return
 		}
 		setRequestHeaders(c, req, cfg, "clone")
+		//removeWSHeader(req)
 		AuthPassThrough(c, cfg, req)
 
 		resp, err = gitclient.Do(req)
@@ -85,6 +86,7 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 
 	for key, values := range resp.Header {
 		for _, value := range values {
+			//c.Header(key, value)
 			c.Response.Header.Add(key, value)
 		}
 	}
@@ -117,9 +119,5 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 		c.Response.Header.Set("Expires", "0")
 	}
 
-	// Instead of directly streaming the body, we need to handle the pkt-line protocol.
-	// This requires reading the response in chunks according to the protocol's format.
-	// For now, let's keep the original streaming logic but add a comment indicating the need for future refinement.
-	// TODO: Implement proper pkt-line handling here.
 	c.SetBodyStream(resp.Body, -1)
 }
