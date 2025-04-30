@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"ghproxy/config"
@@ -13,7 +14,7 @@ import (
 func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Config, mode string) {
 	method := string(c.Request.Method())
 
-	logDump("Url Before FMT:%s", u)
+	bodyReader := bytes.NewBuffer(c.Request.Body())
 	if cfg.GitClone.Mode == "cache" {
 		userPath, repoPath, remainingPath, queryParams, err := extractParts(u)
 		if err != nil {
@@ -30,13 +31,16 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 	)
 
 	if cfg.GitClone.Mode == "cache" {
-		req, err := gitclient.NewRequest(method, u, c.Request.BodyStream())
+		rb := gitclient.NewRequestBuilder(method, u)
+		rb.NoDefaultHeaders()
+		rb.SetBody(bodyReader)
+
+		req, err := rb.Build()
 		if err != nil {
 			HandleError(c, fmt.Sprintf("Failed to create request: %v", err))
 			return
 		}
-		setRequestHeaders(c, req)
-		//removeWSHeader(req)
+		setRequestHeaders(c, req, cfg, "clone")
 		AuthPassThrough(c, cfg, req)
 
 		resp, err = gitclient.Do(req)
@@ -45,13 +49,16 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 			return
 		}
 	} else {
-		req, err := client.NewRequest(method, u, c.Request.BodyStream())
+		rb := client.NewRequestBuilder(string(c.Request.Method()), u)
+		rb.NoDefaultHeaders()
+		rb.SetBody(bodyReader)
+
+		req, err := rb.Build()
 		if err != nil {
 			HandleError(c, fmt.Sprintf("Failed to create request: %v", err))
 			return
 		}
-		setRequestHeaders(c, req)
-		//removeWSHeader(req)
+		setRequestHeaders(c, req, cfg, "clone")
 		AuthPassThrough(c, cfg, req)
 
 		resp, err = client.Do(req)
@@ -78,7 +85,7 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 
 	for key, values := range resp.Header {
 		for _, value := range values {
-			c.Header(key, value)
+			c.Response.Header.Add(key, value)
 		}
 	}
 
@@ -110,5 +117,9 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 		c.Response.Header.Set("Expires", "0")
 	}
 
+	// Instead of directly streaming the body, we need to handle the pkt-line protocol.
+	// This requires reading the response in chunks according to the protocol's format.
+	// For now, let's keep the original streaming logic but add a comment indicating the need for future refinement.
+	// TODO: Implement proper pkt-line handling here.
 	c.SetBodyStream(resp.Body, -1)
 }

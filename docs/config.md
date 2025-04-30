@@ -24,11 +24,13 @@ mode = "auto" # "auto" or "advanced"
 maxIdleConns = 100 # only for advanced mode
 maxIdleConnsPerHost = 60 # only for advanced mode
 maxConnsPerHost = 0 # only for advanced mode
+useCustomRawHeaders = false
 
 [gitclone]
 mode = "bypass" # bypass / cache
 smartGitAddr = "http://127.0.0.1:8080"
 ForceH2C = false
+
 
 [shell]
 editor = false
@@ -117,27 +119,33 @@ target = "ghcr" # ghcr/dockerhub
         *   默认值: `false` (禁用)
         *   说明:  启用后，`ghproxy` 会输出更详细的日志信息，用于开发和调试。
 
-*   **`[httpc]` - HTTP 客户端配置**
+* **`[httpc]` - HTTP 客户端配置**
 
-    *   `mode`:  HTTP 客户端模式。
-        *   类型: 字符串 (`string`)
-        *   默认值: `"auto"` (自动模式)
-        *   可选值:
-            *   `"auto"`:  自动模式，使用默认的 HTTP 客户端配置，适用于大多数场景。
-            *   `"advanced"`: 高级模式，允许自定义连接池参数，可以更精细地控制 HTTP 客户端的行为。
-        *   说明:  选择 HTTP 客户端的运行模式。
-    *   `maxIdleConns`:  最大空闲连接数 (仅在高级模式下生效)。
-        *   类型: 整数 (`int`)
-        *   默认值: `100`
-        *   说明:  设置 HTTP 客户端连接池中保持的最大空闲连接数。
-    *   `maxIdleConnsPerHost`:  每个主机最大空闲连接数 (仅在高级模式下生效)。
-        *   类型: 整数 (`int`)
-        *   默认值: `60`
-        *   说明:  设置 HTTP 客户端连接池中，每个主机允许保持的最大空闲连接数。
-    *   `maxConnsPerHost`:  每个主机最大连接数 (仅在高级模式下生效)。
-        *   类型: 整数 (`int`)
-        *   默认值: `0` (不限制)
-        *   说明:  设置 HTTP 客户端连接池中，每个主机允许建立的最大连接数。设置为 `0` 表示不限制。
+  *   `mode`:  HTTP 客户端模式。
+      *   类型: 字符串 (`string`)
+      *   默认值: `"auto"` (自动模式)
+      *   可选值:
+          *   `"auto"`:  自动模式，使用默认的 HTTP 客户端配置，适用于大多数场景。
+          *   `"advanced"`: 高级模式，允许自定义连接池参数，可以更精细地控制 HTTP 客户端的行为。
+      *   说明:  选择 HTTP 客户端的运行模式。
+  *   `maxIdleConns`:  最大空闲连接数 (仅在高级模式下生效)。
+      *   类型: 整数 (`int`)
+      *   默认值: `100`
+      *   说明:  设置 HTTP 客户端连接池中保持的最大空闲连接数。
+  *   `maxIdleConnsPerHost`:  每个主机最大空闲连接数 (仅在高级模式下生效)。
+      *   类型: 整数 (`int`)
+      *   默认值: `60`
+      *   说明:  设置 HTTP 客户端连接池中，每个主机允许保持的最大空闲连接数。
+  *   `maxConnsPerHost`:  每个主机最大连接数 (仅在高级模式下生效)。
+      *   类型: 整数 (`int`)
+      *   默认值: `0` (不限制)
+      *   说明:  设置 HTTP 客户端连接池中，每个主机允许建立的最大连接数。设置为 `0` 表示不限制。
+  *   `useCustomRawHeaders`: 使用预定义header避免github waf对应zh-CN的封锁
+      *   类型: 布尔值(`bool`)
+      *   默认值: `false`(停用)
+      *   说明: 启用后, 拉取raw文件会使用程序预定义的固定headers, 而不是原先的复制行为
+
+  
 
 *   **`[gitclone]` - Git 克隆配置**
 

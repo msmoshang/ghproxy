@@ -56,6 +56,7 @@ type HttpcConfig struct {
 	MaxIdleConns        int    `toml:"maxIdleConns"`
 	MaxIdleConnsPerHost int    `toml:"maxIdleConnsPerHost"`
 	MaxConnsPerHost     int    `toml:"maxConnsPerHost"`
+	UseCustomRawHeaders bool   `toml:"useCustomRawHeaders"`
 }
 
 /*
