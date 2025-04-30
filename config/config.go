@@ -211,6 +211,7 @@ func DefaultConfig() *Config {
 			MaxIdleConns:        100,
 			MaxIdleConnsPerHost: 60,
 			MaxConnsPerHost:     0,
+			UseCustomRawHeaders: false,
 		},
 		GitClone: GitCloneConfig{
 			Mode:         "bypass",
