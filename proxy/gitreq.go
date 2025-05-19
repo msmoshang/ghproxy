@@ -8,13 +8,33 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/WJQSERVER-STUDIO/go-utils/limitreader"
 	"github.com/cloudwego/hertz/pkg/app"
 )
 
 func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Config, mode string) {
+
+	var (
+		req  *http.Request
+		resp *http.Response
+	)
+
+	go func() {
+		<-ctx.Done()
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+		if req != nil {
+			req.Body.Close()
+		}
+	}()
+
 	method := string(c.Request.Method())
 
-	bodyReader := bytes.NewBuffer(c.Request.Body())
+	reqBodyReader := bytes.NewBuffer(c.Request.Body())
+
+	//bodyReader := c.Request.BodyStream() // 不可替换为此实现
+
 	if cfg.GitClone.Mode == "cache" {
 		userPath, repoPath, remainingPath, queryParams, err := extractParts(u)
 		if err != nil {
@@ -23,17 +43,13 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 		}
 		// 构建新url
 		u = cfg.GitClone.SmartGitAddr + userPath + repoPath + remainingPath + "?" + queryParams.Encode()
-		logDump("New Url After FMT:%s", u)
 	}
-
-	var (
-		resp *http.Response
-	)
 
 	if cfg.GitClone.Mode == "cache" {
 		rb := gitclient.NewRequestBuilder(method, u)
 		rb.NoDefaultHeaders()
-		rb.SetBody(bodyReader)
+		rb.SetBody(reqBodyReader)
+		rb.WithContext(ctx)
 
 		req, err := rb.Build()
 		if err != nil {
@@ -41,7 +57,6 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 			return
 		}
 		setRequestHeaders(c, req, cfg, "clone")
-		//removeWSHeader(req)
 		AuthPassThrough(c, cfg, req)
 
 		resp, err = gitclient.Do(req)
@@ -52,7 +67,8 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 	} else {
 		rb := client.NewRequestBuilder(string(c.Request.Method()), u)
 		rb.NoDefaultHeaders()
-		rb.SetBody(bodyReader)
+		rb.SetBody(reqBodyReader)
+		rb.WithContext(ctx)
 
 		req, err := rb.Build()
 		if err != nil {
@@ -86,7 +102,6 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 
 	for key, values := range resp.Header {
 		for _, value := range values {
-			//c.Header(key, value)
 			c.Response.Header.Add(key, value)
 		}
 	}
@@ -119,5 +134,11 @@ func GitReq(ctx context.Context, c *app.RequestContext, u string, cfg *config.Co
 		c.Response.Header.Set("Expires", "0")
 	}
 
-	c.SetBodyStream(resp.Body, -1)
+	bodyReader := resp.Body
+
+	if cfg.RateLimit.BandwidthLimit.Enabled {
+		bodyReader = limitreader.NewRateLimitedReader(bodyReader, bandwidthLimit, int(bandwidthBurst), ctx)
+	}
+
+	c.SetBodyStream(bodyReader, -1)
 }
