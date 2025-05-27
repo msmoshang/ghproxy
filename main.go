@@ -17,6 +17,7 @@ import (
 	"ghproxy/middleware/loggin"
 	"ghproxy/proxy"
 	"ghproxy/rate"
+	"ghproxy/weakcache"
 
 	"github.com/WJQSERVER-STUDIO/logger"
 	"github.com/hertz-contrib/http2/factory"
@@ -48,6 +49,10 @@ var (
 var (
 	//go:embed pages/*
 	pagesFS embed.FS
+)
+
+var (
+	wcache *weakcache.Cache[string] // docker token缓存
 )
 
 var (
@@ -131,6 +136,8 @@ func setupLogger(cfg *config.Config) {
 		fmt.Printf("Logger Level Error: %v\n", err)
 		os.Exit(1)
 	}
+	logger.SetAsync(cfg.Log.Async)
+
 	fmt.Printf("Log Level: %s\n", cfg.Log.Level)
 	logDebug("Config File Path: ", cfgfile)
 	logDebug("Loaded config: %v\n", cfg)
@@ -205,6 +212,8 @@ func loadEmbeddedPages(cfg *config.Config) (fs.FS, fs.FS, error) {
 		pages, err = fs.Sub(pagesFS, "pages/classic")
 	case "mino":
 		pages, err = fs.Sub(pagesFS, "pages/mino")
+	case "hub":
+		pages, err = fs.Sub(pagesFS, "pages/hub")
 	case "aurora":
 		pages, err = fs.Sub(pagesFS, "pages/aurora")
 	default:
@@ -294,7 +303,7 @@ func setInternalRoute(cfg *config.Config, r *server.Hertz) error {
 		staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
 	})
 	r.GET("/favicon.ico", func(ctx context.Context, c *app.RequestContext) {
-		staticServer := http.FileServer(http.FS(pages))
+		staticServer := http.FileServer(http.FS(assets))
 		req, err := adaptor.GetCompatRequest(&c.Request)
 		if err != nil {
 			logError("%s", err)
@@ -365,6 +374,9 @@ func init() {
 		setMemLimit(cfg)
 		loadlist(cfg)
 		setupRateLimit(cfg)
+		if cfg.Docker.Enabled {
+			wcache = proxy.InitWeakCache()
+		}
 
 		if cfg.Server.Debug {
 			runMode = "dev"
@@ -409,13 +421,13 @@ func main() {
 			r = server.New(
 				server.WithH2C(true),
 				server.WithHostPorts(addr),
-				server.WithSenseClientDisconnection(true),
+				server.WithSenseClientDisconnection(cfg.Server.SenseClientDisconnection),
 			)
 			r.AddProtocol("h2", factory.NewServerFactory())
 		} else {
 			r = server.New(
 				server.WithHostPorts(addr),
-				server.WithSenseClientDisconnection(true),
+				server.WithSenseClientDisconnection(cfg.Server.SenseClientDisconnection),
 			)
 		}
 	} else {
@@ -473,9 +485,26 @@ func main() {
 		proxy.RoutingHandler(cfg, limiter, iplimiter)(ctx, c)
 	})
 
-	r.Any("/v2/*filepath", func(ctx context.Context, c *app.RequestContext) {
-		proxy.GhcrRouting(cfg)(ctx, c)
+	r.GET("/v2/", func(ctx context.Context, c *app.RequestContext) {
+		emptyJSON := "{}"
+		c.Header("Content-Type", "application/json")
+		c.Header("Content-Length", fmt.Sprint(len(emptyJSON)))
+
+		c.Header("Docker-Distribution-API-Version", "registry/2.0")
+
+		c.Status(200)
+		c.Write([]byte(emptyJSON))
 	})
+
+	r.Any("/v2/:target/:user/:repo/*filepath", func(ctx context.Context, c *app.RequestContext) {
+		proxy.GhcrWithImageRouting(cfg)(ctx, c)
+	})
+
+	/*
+		r.Any("/v2/:target/*filepath", func(ctx context.Context, c *app.RequestContext) {
+			proxy.GhcrRouting(cfg)(ctx, c)
+		})
+	*/
 
 	r.NoRoute(func(ctx context.Context, c *app.RequestContext) {
 		proxy.NoRouteHandler(cfg, limiter, iplimiter)(ctx, c)
@@ -490,8 +519,10 @@ func main() {
 			http.ListenAndServe("localhost:6060", nil)
 		}()
 	}
+	if wcache != nil {
+		defer wcache.StopCleanup()
+	}
 
-	r.Spin()
 	defer logger.Close()
 	defer func() {
 		if hertZfile != nil {
@@ -501,5 +532,8 @@ func main() {
 			}
 		}
 	}()
+
+	r.Spin()
+
 	fmt.Println("Program Exit")
 }

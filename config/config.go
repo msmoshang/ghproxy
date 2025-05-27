@@ -37,6 +37,7 @@ type ServerConfig struct {
 	Port      int    `toml:"port"`
 	Host      string `toml:"host"`
 	NetLib    string `toml:"netlib"`
+	SenseClientDisconnection bool   `toml:"senseClientDisconnection"`
 	SizeLimit int    `toml:"sizeLimit"`
 	MemLimit  int64  `toml:"memLimit"`
 	H2C       bool   `toml:"H2C"`
@@ -100,6 +101,7 @@ type LogConfig struct {
 	LogFilePath  string `toml:"logFilePath"`
 	MaxLogSize   int    `toml:"maxLogSize"`
 	Level        string `toml:"level"`
+	Async        bool   `toml:"async"`
 	HertZLogPath string `toml:"hertzLogPath"`
 }
 
