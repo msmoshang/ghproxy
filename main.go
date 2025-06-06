@@ -21,6 +21,7 @@ import (
 
 	"github.com/WJQSERVER-STUDIO/logger"
 	"github.com/hertz-contrib/http2/factory"
+	"github.com/wjqserver/modembed"
 
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/cloudwego/hertz/pkg/app/middlewares/server/recovery"
@@ -197,6 +198,7 @@ func InitReq(cfg *config.Config) {
 
 // loadEmbeddedPages 加载嵌入式页面资源
 func loadEmbeddedPages(cfg *config.Config) (fs.FS, fs.FS, error) {
+	pageFS := modembed.NewModTimeFS(pagesFS, time.Now())
 	var pages fs.FS
 	var err error
 	switch cfg.Pages.Theme {
@@ -226,7 +228,7 @@ func loadEmbeddedPages(cfg *config.Config) (fs.FS, fs.FS, error) {
 	}
 
 	// 初始化errPagesFs
-	errPagesInitErr := proxy.InitErrPagesFS(pagesFS)
+	errPagesInitErr := proxy.InitErrPagesFS(pageFS)
 	if errPagesInitErr != nil {
 		logWarning("errPagesInitErr: %s", errPagesInitErr)
 	}
@@ -238,7 +240,10 @@ func loadEmbeddedPages(cfg *config.Config) (fs.FS, fs.FS, error) {
 	}
 
 	var assets fs.FS
-	assets, err = fs.Sub(pagesFS, "pages/assets")
+	assets, err = fs.Sub(pageFS, "pages/assets")
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to load embedded assets: %w", err)
+	}
 	return pages, assets, nil
 }
 
@@ -284,6 +289,12 @@ func setupPages(cfg *config.Config, r *server.Hertz) {
 	}
 }
 
+func pageCacheHeader() func(ctx context.Context, c *app.RequestContext) {
+	return func(ctx context.Context, c *app.RequestContext) {
+		c.Header("Cache-Control", "public, max-age=3600, must-revalidate")
+	}
+}
+
 func setInternalRoute(cfg *config.Config, r *server.Hertz) error {
 
 	// 加载嵌入式资源
@@ -292,61 +303,69 @@ func setInternalRoute(cfg *config.Config, r *server.Hertz) error {
 		logError("Failed when processing pages: %s", err)
 		return err
 	}
-	// 设置嵌入式资源路由
-	r.GET("/", func(ctx context.Context, c *app.RequestContext) {
-		staticServer := http.FileServer(http.FS(pages))
-		req, err := adaptor.GetCompatRequest(&c.Request)
-		if err != nil {
-			logError("%s", err)
-			return
-		}
-		staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
-	})
-	r.GET("/favicon.ico", func(ctx context.Context, c *app.RequestContext) {
-		staticServer := http.FileServer(http.FS(assets))
-		req, err := adaptor.GetCompatRequest(&c.Request)
-		if err != nil {
-			logError("%s", err)
-			return
-		}
-		staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
-	})
-	r.GET("/script.js", func(ctx context.Context, c *app.RequestContext) {
-		staticServer := http.FileServer(http.FS(pages))
-		req, err := adaptor.GetCompatRequest(&c.Request)
-		if err != nil {
-			logError("%s", err)
-			return
-		}
-		staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
-	})
-	r.GET("/style.css", func(ctx context.Context, c *app.RequestContext) {
-		staticServer := http.FileServer(http.FS(pages))
-		req, err := adaptor.GetCompatRequest(&c.Request)
-		if err != nil {
-			logError("%s", err)
-			return
-		}
-		staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
-	})
-	r.GET("/bootstrap.min.css", func(ctx context.Context, c *app.RequestContext) {
-		staticServer := http.FileServer(http.FS(assets))
-		req, err := adaptor.GetCompatRequest(&c.Request)
-		if err != nil {
-			logError("%s", err)
-			return
-		}
-		staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
-	})
-	r.GET("/bootstrap.bundle.min.js", func(ctx context.Context, c *app.RequestContext) {
-		staticServer := http.FileServer(http.FS(assets))
-		req, err := adaptor.GetCompatRequest(&c.Request)
-		if err != nil {
-			logError("%s", err)
-			return
-		}
-		staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
-	})
+	/*
+		// 设置嵌入式资源路由
+		r.GET("/", func(ctx context.Context, c *app.RequestContext) {
+			staticServer := http.FileServer(http.FS(pages))
+			req, err := adaptor.GetCompatRequest(&c.Request)
+			if err != nil {
+				logError("%s", err)
+				return
+			}
+			staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
+		})
+			r.GET("/favicon.ico", func(ctx context.Context, c *app.RequestContext) {
+				staticServer := http.FileServer(http.FS(assets))
+				req, err := adaptor.GetCompatRequest(&c.Request)
+				if err != nil {
+					logError("%s", err)
+					return
+				}
+				staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
+			})
+		r.GET("/script.js", func(ctx context.Context, c *app.RequestContext) {
+			staticServer := http.FileServer(http.FS(pages))
+			req, err := adaptor.GetCompatRequest(&c.Request)
+			if err != nil {
+				logError("%s", err)
+				return
+			}
+			staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
+		})
+		r.GET("/style.css", func(ctx context.Context, c *app.RequestContext) {
+			staticServer := http.FileServer(http.FS(pages))
+			req, err := adaptor.GetCompatRequest(&c.Request)
+			if err != nil {
+				logError("%s", err)
+				return
+			}
+			staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
+		})
+		r.GET("/bootstrap.min.css", func(ctx context.Context, c *app.RequestContext) {
+			staticServer := http.FileServer(http.FS(assets))
+			req, err := adaptor.GetCompatRequest(&c.Request)
+			if err != nil {
+				logError("%s", err)
+				return
+			}
+			staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
+		})
+		r.GET("/bootstrap.bundle.min.js", func(ctx context.Context, c *app.RequestContext) {
+			staticServer := http.FileServer(http.FS(assets))
+			req, err := adaptor.GetCompatRequest(&c.Request)
+			if err != nil {
+				logError("%s", err)
+				return
+			}
+			staticServer.ServeHTTP(adaptor.GetCompatResponseWriter(&c.Response), req)
+		})
+	*/
+	r.GET("/", pageCacheHeader(), adaptor.HertzHandler(http.FileServer(http.FS(pages))))
+	r.GET("/favicon.ico", pageCacheHeader(), adaptor.HertzHandler(http.FileServer(http.FS(assets))))
+	r.GET("/script.js", pageCacheHeader(), adaptor.HertzHandler(http.FileServer(http.FS(pages))))
+	r.GET("/style.css", pageCacheHeader(), adaptor.HertzHandler(http.FileServer(http.FS(pages))))
+	r.GET("/bootstrap.min.css", pageCacheHeader(), adaptor.HertzHandler(http.FileServer(http.FS(assets))))
+	r.GET("/bootstrap.bundle.min.js", pageCacheHeader(), adaptor.HertzHandler(http.FileServer(http.FS(assets))))
 	return nil
 }
 
